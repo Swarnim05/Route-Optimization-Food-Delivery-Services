@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dehradun Delivery Map</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDmK64LXgDUpDOEP8EBBb2fGia2cUFIZpI&libraries=places&callback=initMap" async defer></script>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2e2e2e; /* Dark background */
+            margin: 0;
+            padding: 0;
+            color: #f1f1f1; /* Light text for better contrast */
+        }
+
+        /* Header Section */
+        header {
+            background-color: #34a853; /* Green header */
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Map Container */
+        #map {
+            width: 80%;
+            height: 500px;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Start Button Styling */
+        #startBtn {
+            display: block;
+            margin: 20px auto;
+            background-color: #34a853; /* Green button */
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #startBtn:hover {
+            background-color: #2c8b45; /* Darker green on hover */
+        }
+
+        /* Controls Section */
+        #controls {
+            width: 60%;
+            margin: 20px auto;
+            padding: 15px;
+            background: #333333; /* Dark background for the controls */
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+
+        /* Input Field Styling */
+        input {
+            width: 90%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: #444; /* Dark background for inputs */
+            color: #fff; /* White text in inputs */
+        }
+
+        /* Delivery Box */
+        .delivery-box {
+            background: #3a3a3a; /* Darker background for delivery boxes */
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            color: #fff; /* White text inside delivery boxes */
+        }
+
+        /* Button Styling */
+        button {
+            background-color: #34a853; /* Green button */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background-color: #2c8b45; /* Darker green on hover */
+        }
+    </style>
+    <script>
+        var map;
+        var markers = [];
+        var autocompletes = [];
+        var dehradunBounds = {
+            north: 30.40,
+            south: 30.25,
+            east: 78.10,
+            west: 77.95
+        };
+
+        function initMap() {
+            var dehradun = { lat: 30.3165, lng: 78.0322 };
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 13,
+                center: dehradun,
+                restriction: {
+                    latLngBounds: dehradunBounds,
+                    strictBounds: true
+                }
+            });
+        }
+
+        function showControls() {
+            document.getElementById("startBtn").style.display = "none";
+            document.getElementById("controls").style.display = "block";
+        }
+
+        function addDeliveries() {
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+            autocompletes = [];
+        
+            var numDeliveries = parseInt(document.getElementById("numDeliveries").value);
+            var locationsDiv = document.getElementById("locations");
+            locationsDiv.innerHTML = "";
+        
+            for (let i = 0; i < numDeliveries; i++) {
+                let inputId = `location${i}`;
+                locationsDiv.innerHTML += `
+                    <div class="delivery-box">
+                        <label>Delivery ${i + 1} Location:</label>
+                        <input type="text" id="${inputId}" class="location-input" placeholder="Enter location in Dehradun">
+                    </div>
+                `;
+            }
+        
+            locationsDiv.innerHTML += `<button onclick="plotMarkersAndRoute()">Plot Deliveries</button>`;
+        
+            setTimeout(() => {
+                for (let i = 0; i < numDeliveries; i++) {
+                    let input = document.getElementById(`location${i}`);
+                    let autocomplete = new google.maps.places.Autocomplete(input, {
+                        bounds: new google.maps.LatLngBounds(
+                            new google.maps.LatLng(dehradunBounds.south, dehradunBounds.west),
+                            new google.maps.LatLng(dehradunBounds.north, dehradunBounds.east)
+                        ),
+                        strictBounds: true,
+                        componentRestrictions: { country: "IN" },
+                        fields: ["geometry", "name"]
+                    });
+                    autocompletes.push(autocomplete);
+                }
+            }, 500);
+        }
+        
+        function plotMarkersAndRoute() {
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+            var geocoder = new google.maps.Geocoder();
+            var numDeliveries = parseInt(document.getElementById("numDeliveries").value);
+            let deliveryPoints = [];
+        
+            function geocodeLocation(index) {
+                if (index >= numDeliveries) {
+                    sendToBackendAndDrawRoute(deliveryPoints);
+                    return;
+                }
+        
+                let placeName = document.getElementById(`location${index}`).value;
+                if (placeName) {
+                    geocoder.geocode({ address: placeName }, function(results, status) {
+                        if (status === "OK") {
+                            var location = results[0].geometry.location;
+                            if (
+                                location.lat() < dehradunBounds.south ||
+                                location.lat() > dehradunBounds.north ||
+                                location.lng() < dehradunBounds.west ||
+                                location.lng() > dehradunBounds.east
+                            ) {
+                                alert(`"${placeName}" is outside Dehradun!`);
+                                return;
+                            }
+        
+                            var marker = new google.maps.Marker({
+                                position: location,
+                                map: map,
+                                title: `Delivery ${index + 1}`
+                            });
+        
+                            markers.push(marker);
+                            if (index === 0) map.setCenter(location);
+                            deliveryPoints.push(placeName);
+                        } else {
+                            alert(`"${placeName}" not found.`);
+                        }
+                        geocodeLocation(index + 1);
+                    });
+                } else {
+                    geocodeLocation(index + 1);
+                }
+            }
+        
+            geocodeLocation(0);
+        }
+        
+        function sendToBackendAndDrawRoute(deliveryPoints) {
+            fetch("http://127.0.0.1:5000/optimize-route", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ locations: deliveryPoints })
+            })
+            .then(res => res.json())
+            .then(route => {
+
+                const directionsService = new google.maps.DirectionsService();
+                const directionsRenderer = new google.maps.DirectionsRenderer({ polylineOptions: { strokeColor: "#34a853" } });
+                directionsRenderer.setMap(map);
+        
+                const waypoints = route.map(loc => ({
+                    location: new google.maps.LatLng(loc.lat, loc.lng),
+                    stopover: true
+                }));
+        
+                const start = waypoints[0].location;
+                const end = waypoints[waypoints.length - 1].location;
+        
+                const request = {
+                    origin: start,
+                    destination: end,
+                    waypoints: waypoints.slice(1, waypoints.length - 1), 
+                    travelMode: google.maps.TravelMode.DRIVING
+                };
+        
+                directionsService.route(request, function(result, status) {
+                    if (status === google.maps.DirectionsStatus.OK) {
+                        directionsRenderer.setDirections(result);
+                    } else {
+                        alert("Directions request failed due to " + status);
+                    }
+                });
+            })
+            .catch(err => console.error("Error:", err));
+        }
+    </script>
+</head>
+<body>
+    <header>Dehradun Delivery Map</header>
+    <button id="startBtn" onclick="showControls()">Start Deliveries</button>
+    <div id="controls">
+        <label>Number of Deliveries:</label>
+        <input type="number" id="numDeliveries" min="1" required>
+        <button onclick="addDeliveries()">Enter Locations</button>
+        <div id="locations"></div>
+    </div>
+    <div id="map"></div>
+</body>
+</html>
