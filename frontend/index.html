@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERoute - Intelligent Logistics Dashboard</title>
+    <meta name="description" content="AI Delivery Route Optimization and Prediction">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <div class="logo-orb glow"></div>
+                <div>
+                    <h1>ERoute</h1>
+                    <p class="subtitle">AI Route Optimization</p>
+                </div>
+            </div>
+
+            <div class="scroll-area">
+                <div class="controls-section">
+                    <h2>Predictive Insights</h2>
+                    <div class="toggle-container">
+                        <label class="switch">
+                            <input type="checkbox" id="heatmapToggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Live Demand Heatmap</span>
+                    </div>
+                </div>
+
+                <div class="controls-section">
+                    <h2>Fleet Settings</h2>
+                    <div class="input-group">
+                        <label for="numAgents">Available Delivery Agents</label>
+                        <select id="numAgents" class="glass-input">
+                            <option value="1">1 Agent</option>
+                            <option value="2">2 Agents</option>
+                            <option value="3">3 Agents</option>
+                            <option value="4">4 Agents</option>
+                            <option value="5">5 Agents</option>
+                        </select>
+                    </div>
+                    <div class="toggle-container">
+                        <label class="switch">
+                            <input type="checkbox" id="trafficToggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Real-Time Traffic Mode</span>
+                    </div>
+                </div>
+
+                <div class="controls-section">
+                    <h2>Delivery Manifest</h2>
+                    <div id="deliveryPointsList" class="deliveries-list">
+                        <!-- Initial fields injected by JS -->
+                    </div>
+                    <button id="addDeliveryBtn" class="btn outline-btn">+ Add Destination</button>
+                    <button id="clearBtn" class="btn text-btn">Clear All</button>
+                </div>
+            </div>
+
+            <div class="action-footer">
+                <button id="optimizeBtn" class="btn primary-btn glow">Optimize & Assign</button>
+            </div>
+            
+        </aside>
+
+        <!-- Main Map Area -->
+        <main class="map-area">
+            <div id="map"></div>
+            
+            <!-- Loading indicator -->
+            <div id="loader" class="loader-overlay hidden">
+                <div class="spinner"></div>
+                <p>Computing Optimal Routes...</p>
+            </div>
+        </main>
+    <script src="js/app.js"></script>
+</body>
+</html>
